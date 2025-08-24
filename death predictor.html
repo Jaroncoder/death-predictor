@@ -1,0 +1,272 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Death Predictor</title>
+  <style>
+    body {
+      margin: 0;
+      padding: 0;
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      color: #fff;
+      display: flex;
+      min-height: 100vh;
+      align-items: center;
+      justify-content: center;
+      position: relative;
+      overflow: hidden;
+      background-color: #121212;
+    }
+
+    video.bg-video {
+      position: fixed;
+      top: 0;
+      left: 0;
+      min-width: 100%;
+      min-height: 100%;
+      object-fit: cover;
+      z-index: -1;
+    }
+
+    .container {
+      display: flex;
+      width: 100%;
+      max-width: 1100px; /* Fixed container width to force side-by-side */
+      margin: 0 auto;
+      padding: 3rem 1.5rem;
+      gap: 2rem;
+      z-index: 1;
+      justify-content: center;
+      flex-wrap: nowrap; /* Prevent wrapping so containers stay side by side */
+      box-sizing: border-box;
+    }
+    .result-container, .form-container {
+      flex: 0 0 48%; /* Fixed width at 48% each for side by side */
+      min-width: 480px; /* Minimum width */
+      background: rgba(30, 30, 30, 0.65);
+      padding: 2rem;
+      border-radius: 24px;
+      box-shadow: 0 12px 48px rgba(0,0,0,0.35);
+      text-align: center;
+      border: 3px solid #C0C0C0;
+      box-sizing: border-box;
+      max-height: 520px;
+      overflow-y: auto;
+    }
+
+    .logo {
+      width: 120px;
+      height: auto;
+      margin-bottom: 1.5rem;
+    }
+
+    label {
+      display: block;
+      margin: 1rem 0 0.5rem 0;
+      font-weight: 500;
+      text-align: left;
+    }
+    input, select {
+      width: 100%;
+      padding: 0.5rem;
+      border-radius: 8px;
+      border: 2px solid #C0C0C0;
+      margin-bottom: 1rem;
+      font-size: 1rem;
+      box-sizing: border-box;
+    }
+    button {
+      background: #ff4e50;
+      color: #fff;
+      border: none;
+      padding: 0.75rem 2rem;
+      border-radius: 8px;
+      font-size: 1rem;
+      cursor: pointer;
+      transition: background 0.2s;
+      width: 100%;
+      box-sizing: border-box;
+    }
+    button:hover {
+      background: #fc913a;
+    }
+    .footer {
+      margin-top: 3rem;
+      font-size: 0.9rem;
+      color: #aaa;
+      z-index: 1;
+      text-align: center;
+      width: 100%;
+    }
+    .photo-preview {
+      margin: 1rem 0;
+      width: 100px;
+      height: 100px;
+      object-fit: cover;
+      border-radius: 50%;
+      border: 2px solid #C0C0C0;
+      display: none;
+    }
+    .danger {
+      animation: shake 0.5s infinite alternate, glow 1s infinite alternate;
+      color: #C0C0C0 !important;
+    }
+    @keyframes shake {
+      0% { transform: translateX(-5px);}
+      100% { transform: translateX(5px);}
+    }
+    @keyframes glow {
+      0% { text-shadow: 0 0 10px #C0C0C0, 0 0 20px #C0C0C0;}
+      100% { text-shadow: 0 0 20px #C0C0C0, 0 0 40px #C0C0C0;}
+    }
+
+    .gif-box {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border: 3px solid #C0C0C0;
+      border-radius: 16px;
+      background: rgba(30, 30, 30, 0.6);
+      width: 260px;
+      height: 180px;
+      margin: 1.5rem auto 0 auto;
+      box-shadow: 0 4px 16px rgba(0,0,0,0.5);
+      overflow: hidden;
+    }
+  </style>
+</head>
+<body>
+  <!-- Background video -->
+  <video autoplay muted loop class="bg-video">
+    <source src="background.mp4" type="video/mp4">
+    Your browser does not support HTML5 video.
+  </video>
+
+  <div class="container">
+    <div class="result-container" id="result">
+      <img src="logo.png" alt="App Logo" class="logo">
+      <h2>Prediction Result</h2>
+      <div id="result-content"></div>
+    </div>
+    <div class="form-container">
+      <img src="logo.png" alt="App Logo" class="logo">
+      <form id="predictorForm">
+        <label for="name">Your Name</label>
+        <input type="text" id="name" name="name" required>
+
+        <label for="age">Your Age</label>
+        <input type="number" id="age" name="age" min="1" max="120" required>
+
+        <label for="locality">Your Locality</label>
+        <input type="text" id="locality" name="locality" required>
+
+        <label for="photo">Your Photo</label>
+        <input type="file" id="photo" name="photo" accept="image/*" required>
+        <img id="photoPreview" class="photo-preview" alt="Photo Preview">
+
+        <label for="sleep">Average Sleep Time (hours per day)</label>
+        <input type="number" id="sleep" name="sleep" min="0" max="24" required>
+
+        <label for="favfood">Favorite Food</label>
+        <select id="favfood" name="favfood" required>
+          <option value="">-- Select Food --</option>
+          <option value="Pizza">Pizza</option>
+          <option value="Burger">Burger</option>
+          <option value="Pasta">Pasta</option>
+          <option value="Sushi">Sushi</option>
+          <option value="Salad">Salad</option>
+        </select>
+
+        <button type="submit">Predict My Death Time</button>
+      </form>
+    </div>
+  </div>
+  <div class="footer">
+    For entertainment purposes only. Not a real predictor.
+  </div>
+
+  <script>
+    // Photo preview
+    document.getElementById('photo').addEventListener('change', function(e) {
+      const file = e.target.files[0];
+      const preview = document.getElementById('photoPreview');
+      if (file) {
+        const reader = new FileReader();
+        reader.onload = function(evt) {
+          preview.src = evt.target.result;
+          preview.style.display = 'block';
+        };
+        reader.readAsDataURL(file);
+      } else {
+        preview.style.display = 'none';
+      }
+    });
+
+    function getRandomInt(min, max) {
+      return Math.floor(Math.random() * (max - min + 1)) + min;
+    }
+
+    document.getElementById('predictorForm').addEventListener('submit', function(e) {
+      e.preventDefault();
+      const name = document.getElementById('name').value.trim();
+      const age = parseInt(document.getElementById('age').value, 10);
+      const sleep = parseInt(document.getElementById('sleep').value, 10);
+      const favfood = document.getElementById('favfood').value;
+
+      // Simple "prediction" logic
+      let baseLifeExpectancy = 80;
+      if (sleep < 5) baseLifeExpectancy -= 5;
+      else if (sleep > 9) baseLifeExpectancy -= 2;
+      else baseLifeExpectancy += 2;
+
+      const randomOffset = getRandomInt(-5, 5);
+      const predictedAge = Math.max(age, baseLifeExpectancy + randomOffset);
+      const now = new Date();
+      const deathDate = new Date(now.getFullYear() + (predictedAge - age), now.getMonth(), now.getDate());
+
+      function updateCountdown() {
+        const now = new Date();
+        let diff = deathDate - now;
+        if (diff < 0) diff = 0;
+        const years = Math.floor(diff / (1000 * 60 * 60 * 24 * 365.25));
+        const days = Math.floor((diff % (1000 * 60 * 60 * 24 * 365.25)) / (1000 * 60 * 60 * 24));
+        const hours = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+        const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+        const seconds = Math.floor((diff % (1000 * 60)) / 1000);
+
+        let danger = (years < 5);
+
+        let resultHTML = `
+          <div style="margin-top:1rem;">
+            <span ${danger ? 'class="danger"' : ''}>
+              <strong>Time Remaining:</strong><br>
+              ${years} years, ${days} days, ${hours} hours, ${minutes} minutes, ${seconds} seconds
+            </span>
+          </div>
+        `;
+
+        document.getElementById('result-content').innerHTML = resultHTML;
+
+        // Place GIF inside a box
+        let gifBox = document.createElement('div');
+        gifBox.className = 'gif-box';
+        gifBox.innerHTML = danger
+          ? '<img src="./death.gif" alt="Death GIF" style="max-width:220px;max-height:140px;">'
+          : '<img src="./health.webp" alt="Health GIF" style="max-width:220px;max-height:140px;">';
+        document.getElementById('result-content').appendChild(gifBox);
+
+        if (danger) {
+          document.getElementById('result-content').classList.add('danger');
+        } else {
+          document.getElementById('result-content').classList.remove('danger');
+        }
+      }
+
+      // Start countdown
+      updateCountdown();
+      if (window.countdownInterval) clearInterval(window.countdownInterval);
+      window.countdownInterval = setInterval(updateCountdown, 1000);
+    });
+  </script>
+</body>
+</html>
