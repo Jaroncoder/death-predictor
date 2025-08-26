@@ -50,7 +50,7 @@
       text-align: center;
       border: 3px solid #C0C0C0;
       box-sizing: border-box;
-      max-height: 520px;
+      max-height: 600px;
       overflow-y: auto;
     }
 
@@ -133,6 +133,40 @@
       box-shadow: 0 4px 16px rgba(0,0,0,0.5);
       overflow: hidden;
     }
+
+    .food-selection {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 0.5rem;
+      margin-bottom: 1rem;
+      text-align: left;
+    }
+
+    .food-item {
+      display: flex;
+      align-items: center;
+      padding: 0.3rem;
+      border-radius: 4px;
+      background: rgba(255, 255, 255, 0.1);
+    }
+
+    .food-item input[type="checkbox"] {
+      margin-right: 0.5rem;
+      width: auto;
+    }
+
+    .food-item label {
+      margin: 0;
+      font-size: 0.9rem;
+      cursor: pointer;
+    }
+
+    .selection-counter {
+      font-size: 0.9rem;
+      color: #aaa;
+      margin-bottom: 0.5rem;
+      text-align: left;
+    }
   </style>
 </head>
 <body>
@@ -157,6 +191,14 @@
         <label for="age">Your Age</label>
         <input type="number" id="age" name="age" min="1" max="120" required>
 
+        <label for="gender">Your Gender</label>
+        <select id="gender" name="gender" required>
+          <option value="">-- Select Gender --</option>
+          <option value="male">Male</option>
+          <option value="female">Female</option>
+          <option value="other">Other</option>
+        </select>
+
         <label for="locality">Your Locality</label>
         <input type="text" id="locality" name="locality" required>
 
@@ -167,15 +209,50 @@
         <label for="sleep">Average Sleep Time (hours per day)</label>
         <input type="number" id="sleep" name="sleep" min="0" max="24" required>
 
-        <label for="favfood">Favorite Food</label>
-        <select id="favfood" name="favfood" required>
-          <option value="">-- Select Food --</option>
-          <option value="Pizza">Pizza</option>
-          <option value="Burger">Burger</option>
-          <option value="Pasta">Pasta</option>
-          <option value="Sushi">Sushi</option>
-          <option value="Salad">Salad</option>
-        </select>
+        <label>Choose 4-5 of your favorite foods:</label>
+        <div class="selection-counter" id="selectionCounter">Selected: 0/5</div>
+        <div class="food-selection">
+          <div class="food-item">
+            <input type="checkbox" id="pizza" name="foods" value="Pizza">
+            <label for="pizza">Pizza</label>
+          </div>
+          <div class="food-item">
+            <input type="checkbox" id="burger" name="foods" value="Burger">
+            <label for="burger">Burger</label>
+          </div>
+          <div class="food-item">
+            <input type="checkbox" id="pasta" name="foods" value="Pasta">
+            <label for="pasta">Pasta</label>
+          </div>
+          <div class="food-item">
+            <input type="checkbox" id="sushi" name="foods" value="Sushi">
+            <label for="sushi">Sushi</label>
+          </div>
+          <div class="food-item">
+            <input type="checkbox" id="salad" name="foods" value="Salad">
+            <label for="salad">Salad</label>
+          </div>
+          <div class="food-item">
+            <input type="checkbox" id="icecream" name="foods" value="Ice Cream">
+            <label for="icecream">Ice Cream</label>
+          </div>
+          <div class="food-item">
+            <input type="checkbox" id="chocolate" name="foods" value="Chocolate">
+            <label for="chocolate">Chocolate</label>
+          </div>
+          <div class="food-item">
+            <input type="checkbox" id="fried_chicken" name="foods" value="Fried Chicken">
+            <label for="fried_chicken">Fried Chicken</label>
+          </div>
+          <div class="food-item">
+            <input type="checkbox" id="fruits" name="foods" value="Fruits">
+            <label for="fruits">Fruits</label>
+          </div>
+          <div class="food-item">
+            <input type="checkbox" id="vegetables" name="foods" value="Vegetables">
+            <label for="vegetables">Vegetables</label>
+          </div>
+        </div>
 
         <button type="submit">Predict My Death Time</button>
       </form>
@@ -186,6 +263,20 @@
   </div>
 
   <script>
+    // Food data with hidden toxic and energy levels
+    const foodData = {
+      "Pizza": { toxic: 6, energy: 7 },
+      "Burger": { toxic: 7, energy: 6 },
+      "Pasta": { toxic: 3, energy: 8 },
+      "Sushi": { toxic: 2, energy: 6 },
+      "Salad": { toxic: 1, energy: 4 },
+      "Ice Cream": { toxic: 5, energy: 5 },
+      "Chocolate": { toxic: 4, energy: 6 },
+      "Fried Chicken": { toxic: 8, energy: 7 },
+      "Fruits": { toxic: 1, energy: 5 },
+      "Vegetables": { toxic: 1, energy: 4 }
+    };
+
     // Photo preview
     document.getElementById('photo').addEventListener('change', function(e) {
       const file = e.target.files[0];
@@ -202,27 +293,83 @@
       }
     });
 
+    // Food selection counter and validation
+    const checkboxes = document.querySelectorAll('input[name="foods"]');
+    const selectionCounter = document.getElementById('selectionCounter');
+
+    checkboxes.forEach(checkbox => {
+      checkbox.addEventListener('change', function() {
+        const selectedCount = document.querySelectorAll('input[name="foods"]:checked').length;
+        selectionCounter.textContent = `Selected: ${selectedCount}/5`;
+        
+        // Disable unchecked boxes if 5 are selected
+        if (selectedCount >= 5) {
+          checkboxes.forEach(cb => {
+            if (!cb.checked) {
+              cb.disabled = true;
+            }
+          });
+        } else {
+          checkboxes.forEach(cb => {
+            cb.disabled = false;
+          });
+        }
+      });
+    });
+
     function getRandomInt(min, max) {
       return Math.floor(Math.random() * (max - min + 1)) + min;
     }
 
     document.getElementById('predictorForm').addEventListener('submit', function(e) {
       e.preventDefault();
+      
       const name = document.getElementById('name').value.trim();
       const age = parseInt(document.getElementById('age').value, 10);
+      const gender = document.getElementById('gender').value;
       const sleep = parseInt(document.getElementById('sleep').value, 10);
-      const favfood = document.getElementById('favfood').value;
+      const selectedFoods = Array.from(document.querySelectorAll('input[name="foods"]:checked')).map(cb => cb.value);
 
-      // Simple "prediction" logic
-      let baseLifeExpectancy = 80;
+      // Validate food selection
+      if (selectedFoods.length < 4 || selectedFoods.length > 5) {
+        alert('Please select 4-5 foods!');
+        return;
+      }
+
+      // Calculate base life expectancy based on gender
+      let baseLifeExpectancy = 75;
+      if (gender === 'female') baseLifeExpectancy += 5; // Women tend to live longer
+      else if (gender === 'male') baseLifeExpectancy += 2;
+      else baseLifeExpectancy += 3; // Other
+
+      // Sleep impact
       if (sleep < 5) baseLifeExpectancy -= 5;
       else if (sleep > 9) baseLifeExpectancy -= 2;
-      else baseLifeExpectancy += 2;
+      else baseLifeExpectancy += 3;
 
-      const randomOffset = getRandomInt(-5, 5);
-      const predictedAge = Math.max(age, baseLifeExpectancy + randomOffset);
+      // Food impact calculation
+      let totalToxic = 0;
+      let totalEnergy = 0;
+      selectedFoods.forEach(food => {
+        totalToxic += foodData[food].toxic;
+        totalEnergy += foodData[food].energy;
+      });
+
+      const avgToxic = totalToxic / selectedFoods.length;
+      const avgEnergy = totalEnergy / selectedFoods.length;
+
+      // Mathematical calculation based on food choices
+      // High toxic foods reduce life expectancy, high energy foods increase it
+      const foodImpact = (avgEnergy * 2) - (avgToxic * 1.5);
+      baseLifeExpectancy += Math.round(foodImpact);
+
+      // Add some randomness
+      const randomOffset = getRandomInt(-3, 3);
+      const predictedAge = Math.max(age + 1, baseLifeExpectancy + randomOffset);
+      const yearsLeft = Math.max(1, predictedAge - age);
+
       const now = new Date();
-      const deathDate = new Date(now.getFullYear() + (predictedAge - age), now.getMonth(), now.getDate());
+      const deathDate = new Date(now.getFullYear() + yearsLeft, now.getMonth(), now.getDate());
 
       function updateCountdown() {
         const now = new Date();
@@ -238,7 +385,10 @@
 
         let resultHTML = `
           <div style="margin-top:1rem;">
+            <p><strong>Hello ${name}!</strong></p>
+            <p>Based on your lifestyle choices, food preferences, and other factors:</p>
             <span ${danger ? 'class="danger"' : ''}>
+              <strong>You have ${yearsLeft} years until you die</strong><br><br>
               <strong>Time Remaining:</strong><br>
               ${years} years, ${days} days, ${hours} hours, ${minutes} minutes, ${seconds} seconds
             </span>
